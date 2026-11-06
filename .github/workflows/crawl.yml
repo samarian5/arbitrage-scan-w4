@@ -1,9 +1,9 @@
 name: crawl
 
-# A shard: one of N repos that all pull work from the same queue. It holds no
-# logic of its own — it calls the reusable worker in the main repo. The reason
-# for separate repos is purely GitHub: concurrency groups are per repo, so two
-# dispatches in one repo would evict each other.
+# A shard: one of N repos pulling from the same Postgres queue. No logic here —
+# it calls the reusable worker in the main repo. Separate repos exist purely
+# because GitHub concurrency groups are per repo: two dispatches in one repo
+# would evict each other.
 on:
   workflow_dispatch:
   schedule:
@@ -19,6 +19,6 @@ jobs:
     with:
       slot: w4
       slices: 10
-    secrets:
-      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-      SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+    # `inherit`, not an explicit map: a caller that names secrets explicitly is
+    # rejected at validation (0 jobs, no check-run) even when they exist.
+    secrets: inherit

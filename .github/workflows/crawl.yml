@@ -1,15 +1,21 @@
 name: crawl
+
+# A shard: one of N repos that all pull work from the same queue. It holds no
+# logic of its own — it calls the reusable worker in the main repo. The reason
+# for separate repos is purely GitHub: concurrency groups are per repo, so two
+# dispatches in one repo would evict each other.
 on:
   workflow_dispatch:
   schedule:
-    - cron: "57 */2 * * *"
+    - cron: "23 */2 * * *"
 
-# One running + one pending run per shard. cancel-in-progress must stay false:
-# a cancelled slice mid-write is a hole in the pass.
 concurrency:
   group: crawl-w4
   cancel-in-progress: false
 
+# The called workflow writes run diagnostics back to its own repo, so it asks
+# for contents: write. A caller must grant at least that or the call is
+# rejected at validation time — which shows up as a failed run with no jobs.
 permissions:
   contents: write
 
@@ -19,4 +25,6 @@ jobs:
     with:
       slot: w4
       slices: 10
-    secrets: inherit
+    secrets:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
